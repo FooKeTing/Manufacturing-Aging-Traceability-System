@@ -209,5 +209,5 @@ Screenshots of the system are stored in the screenshot/ folder:
 
 Foo Ke Ting
 
-Email:
+Email:ktingfoo0527@gmail.com
 
