@@ -46,6 +46,7 @@ def init_db():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS troubleshooting_records(
         batch_id INTEGER,
+        order_id TEXT,
         date TEXT,
         error TEXT,
         reject_num INTEGER,
