@@ -88,7 +88,7 @@ aging-traceability/
 
 │   ├── db.py             				# Database connection and initialization
 
-│   └── func.py                 			# Helper functions 
+│   └── func.py                 			# Helper functions
 
 ├── DB/
 
@@ -118,9 +118,11 @@ aging-traceability/
 
 │   ├── 3.scan\_page - after end batch and analysis data.png
 
-│   ├── 4.chart.png
+│   ├── 4. show bar chart per order id.png
 
-│   └── 4.5.chart.png
+│   ├── 4.1 show pie chart per order id.png
+
+│   └── 4.2 show error table per order id.png
 
 ├── README.md
 

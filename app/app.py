@@ -8,10 +8,10 @@ import zipfile
 import re
 import xlwings as xw
 import time
-from config import MAX_PER_RACK, RACK_PC, RACK_LIST, BASE_PATH_TRACE, SHARED_PATH, TRACE_DB_NAME, ERROR_CODE_DESC, ERROR_OPTIONS, DB_PATH, DB_NAME 
+from config import MAX_PER_RACK, RACK_PC, RACK_LIST, BASE_PATH_TRACE, SHARED_PATH, TRACE_DB_NAME, ERROR_CODE_DESC, ERROR_OPTIONS 
 from db import init_db, get_connection
 from func import *
-from chart import show_error_bar
+from chart import *
 
 init_db()
 
@@ -45,6 +45,9 @@ if "clear_manual_inputs" not in st.session_state:
 if "auto_process_running" not in st.session_state:
     st.session_state.auto_process_running = False
 
+if "pass_msg_shown" not in st.session_state:
+    st.session_state.pass_msg_shown = False
+
 def process_passed_results(order_id, batch_id, result_folder):
     batch_start, batch_end, date_start, date_end = get_batch_time_range(batch_id)
 
@@ -62,7 +65,6 @@ def process_passed_results(order_id, batch_id, result_folder):
     if not passstatus:
         return pass_count, fail_count, {}, message
 
-    st.success("✅ Aging files detected!")
     agingA_df = pd.concat(
         [pd.read_excel(f)[["IP","Main board SN"]] for f in filesA],
         ignore_index=True
@@ -132,7 +134,6 @@ def process_passed_results(order_id, batch_id, result_folder):
         """, (result, fg_sn, batch_id))
 
     conn.commit()
-    st.success("✅ Aging results processed!")
 
 def process_failed_result_details(order_id, batch_id, result_folder):
     batch_start, batch_end, date_start, date_end = get_batch_time_range(batch_id)
@@ -228,8 +229,6 @@ def process_failed_result_details(order_id, batch_id, result_folder):
     failed_code_null = cursor.fetchall()
 
     if fail_count > 0 and failstatus:
-        st.success("✅ Aging error files detected!")
-
         err_excel_df = pd.concat(
             [pd.read_excel(f)[["IP","Status","Aging Error Code","Upload Data","Repower Test Result","Device Error Code","Main board SN","Board SN"]] for f in filesErrExcel],
             ignore_index=True
@@ -393,38 +392,46 @@ def process_failed_result_details(order_id, batch_id, result_folder):
     conn.commit()
 
 def auto_process_check():
-    batch_id = get_latest_batch_id()
-    batch_start, batch_end, date_start, date_end = get_batch_time_range(batch_id)
-
     if not st.session_state.get("auto_process_running"):
         return
 
+    batch_id = get_latest_batch_id()
+    batch_start, batch_end, date_start, date_end = get_batch_time_range(batch_id)
+
     result_folder = st.session_state.get("current_batch_folder")
     order_id = st.session_state.order_id
-    batch_id = get_latest_batch_id()
 
     if not result_folder:
         return
 
-    passstatus, pass_msg, files, filesB = check_pass_files(result_folder, date_start, date_end)
-    failstatus, fail_msg, filesErrExcel = check_fail_excel(result_folder, date_start, date_end)
+    with st.status("🔄 Monitoring result folder...", expanded=True) as status:
+
+        while st.session_state.get("auto_process_running"):
+
+            passstatus, pass_msg, files, filesB = check_pass_files(result_folder, date_start, date_end)
+            failstatus, fail_msg, filesErrExcel = check_fail_excel(result_folder, date_start, date_end)
     
-    if passstatus:
-        process_passed_results(order_id, batch_id, result_folder)
-        if failstatus:
-            st.success("✅ Processing completed!")
-            process_failed_result_details(order_id, batch_id, result_folder)
-            st.session_state.auto_process_running = False
-        else:
-            st.warning(f"⏳ {fail_msg}")
-            st.info(f"Please put the result files into: {result_folder}")
+            if passstatus:
+                if not st.session_state.pass_msg_shown:
+                    st.info("✅ Pass files detected. Processing...")
+                    st.session_state.pass_msg_shown = True
+               
+                process_passed_results(order_id, batch_id, result_folder)
+
+                if failstatus:
+                    st.info(f"✅ All files ready. Analyzing result...")
+                    process_failed_result_details(order_id, batch_id, result_folder)
+
+                    status.update(label="🎉 Processing completed!", state="complete")
+                    st.session_state.auto_process_running = False
+                    st.session_state.pass_msg_shown = False
+                    break
+                else:
+                    status.update(label=f"⏳ {fail_msg} Please put the result files into: {result_folder}", state="running")
+            else:
+                status.update(label=f"⏳ {pass_msg} Please put the result files into: {result_folder}", state="running")
+
             time.sleep(3)
-            st.rerun()
-    else:
-        st.warning(f"⏳ {pass_msg}")
-        st.info(f"Please put the result files into: {result_folder}")
-        time.sleep(3)
-        st.rerun()
 
 def scan_fg_sn():
     fg_sn = st.session_state.fg_sn.strip()
@@ -595,8 +602,8 @@ def end_batch():
 
     st.session_state.auto_process_running = True
 
-    st.success("📁 Folder created")
-    st.info("🤖 Auto-processing started. Waiting for files...")
+    auto_process_check()
+
 
 multiPage = st.sidebar.selectbox(
     "Select Page",
@@ -657,7 +664,6 @@ if multiPage == "Scan FG SN":
                     st.session_state.confirm_cancel = False
 
     display_scan_summary(st.session_state.selected_rack)
-    auto_process_check()
 
 elif multiPage == "Manual Input Error Failed Unit":
     st.title("Manual Input Error for Failed Unit")
@@ -744,4 +750,19 @@ elif multiPage == "Manual Input Error Failed Unit":
                     st.rerun()
 
 elif multiPage == "Charts":
-    show_error_bar()
+    st.title("📈 Batch Analysis Dashboard")
+    st.divider()
+
+    selected_order = select_order()
+    if selected_order:
+        with st.container():
+            st.subheader("📊 First Failed Units by Error Description")
+            df = get_error_data(selected_order)
+            tab1, tab2, tab3 = st.tabs(["📋 Table", "📊 Bar Chart", "🥧 Pie Chart"], default="📊 Bar Chart")
+            
+            with tab1:
+                show_error_table(df)
+            with tab2:
+                show_error_bar_chart(df)
+            with tab3:
+                show_error_pie_chart(df)
