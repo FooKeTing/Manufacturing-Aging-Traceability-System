@@ -1,4 +1,4 @@
-### Manufacturing Aging Traceability System
+# Manufacturing Aging Traceability System
 
 
 
@@ -10,7 +10,9 @@ This project is a streamlit-based system designed to automate the processing and
 
 ##### Features (Updated)
 
-* ###### **Batch Scanning**
+
+
+###### **Batch Scanning**
 
      - Scan Finished Good (FG) Serial Number (SN) per rack.
 
@@ -24,7 +26,7 @@ This project is a streamlit-based system designed to automate the processing and
 
 
 
-* ###### **Automated Result Processing**
+###### **Automated Result Processing**
 
      - Automatically detect aging test result (result\_A, result\_B, .zip, and error files) after ending a batch.
 
@@ -36,7 +38,7 @@ This project is a streamlit-based system designed to automate the processing and
 
 
 
-* ###### **Manual Error Handling**
+###### **Manual Error Handling**
 
      - Allows operators to manually record units that physically failed (errors not captured by aging test).
 
@@ -44,7 +46,7 @@ This project is a streamlit-based system designed to automate the processing and
 
 
 
-* ###### **Batch Management**
+###### **Batch Management**
 
      - Start batch (records start time).
 
@@ -54,7 +56,7 @@ This project is a streamlit-based system designed to automate the processing and
 
 
 
-* ###### **Streamlit interface**
+###### **Streamlit interface**
 
      - Provide a user-friendly web dashboard for monitoring aging results.
 
@@ -62,19 +64,49 @@ This project is a streamlit-based system designed to automate the processing and
 
 
 
-* ###### Visualizations (New)
+###### **Troubleshooting Records (New)**
 
-&#x20;    - Error Bar Chart - shows the frequency of each error for a selected order\_id.
+     - Allows engineers to update root cause, action taken and status by selecting Batch ID with SN.
 
-&#x09;-  To help engineer quickly identify which errors are most common in the order.
+     - Saves changes to database for traceability.
 
-&#x20;    - Top 5 Pie Chart - displays the five most frequent error codes as a pie chart for quick insight.
-
-
+     - Provide a full table view of all troubleshooting records.
 
 
+
+###### **Visualizations (Updated!)**
+
+     - **Error Frequency Bar Chart** - shows the frequency of each error for a selected order\_id.
+
+     	- Provides engineers a clear view of which errors happen most often.
+
+ 	- Helps prioritize issues that need immediate attention.
+
+     - **Top-5 Error Pie Chart** - displays the five most frequent error codes as a pie chart.
+
+ 	- Offers a quick visual summary of the most impactful errors.
+
+ 	- Makes it easy to spot which errors dominate the order at a glance.
+
+     - **Root Cause Bar Chart** - shows the frequency of each identified root cause for a selected order\_id.
+
+     	- Helps engineers understand which underlying issues contribute most to failures.
+
+ 	- Supports prioritization of corrective actions based on impact.
+
+     - **Top-5 Root Cause Pie Chart** - shows the proportion of the top root causes in a pie chart.
+
+ 	- Provides a quick overview of how different root causes are distributed.
+
+ 	- Makes it easy to identify the dominant cause affecting the order.
+
+##### 
+
+##### 
 
 ##### Project Structure
+
+
 
 aging-traceability/
 
@@ -102,33 +134,43 @@ aging-traceability/
 
 │       └── 260403\_0936 (end batch time and date)/
 
-│           ├── \*error\*.xlsx     		# Sample error files
+│           ├── \*error\*.xlsx     			# Sample error files
 
-│           ├── \*result\_A\*.xlsx          	# Sample result A files
+│           ├── \*result\_A\*.xlsx          		# Sample result A files
 
-│           ├── \*result\_B\*.xlsx          	# Sample result B files
+│           ├── \*result\_B\*.xlsx          		# Sample result B files
 
-│           └── Device - \*.zip         		# Sample result ZIP files
+│           └── Device - \*.zip         			# Sample result ZIP files
 
 ├── screenshot/
 
-│   ├── 1.scan\_page.png
+│   ├── 1.scan-fg-sn-page.png
 
-│   ├── 2.manual\_input\_error.png
+│   ├── 2.manual-input-physical-error-after-start-batch.png
 
-│   ├── 3.scan\_page - after end batch and analysis data.png
+│   ├── 3.scan-fg-sn-page-after-end-batch-dashboard.png
 
-│   ├── 4. show bar chart per order id.png
+│   ├── 4. troubleshooting-record-edit-form.png
 
-│   ├── 4.1 show pie chart per order id.png
+│   ├── 5. error-bar-chart.png
 
-│   └── 4.2 show error table per order id.png
+│   ├── 5.1 error-table.png
+
+│   ├── 5.2 error-pie-chart.png
+
+│   ├── 5.3 root-cause-bar-chart.png
+
+│   ├── 5.4 root-cause-table.png
+
+│   └── 5.5 root-cause-pie-chart
 
 ├── README.md
 
-└── requirements.txt          			# Python dependencies
+└── requrements.txt          			# Python dependencies
 
 
+
+##### 
 
 ##### Requirements
 
@@ -149,27 +191,41 @@ Install dependencies using:
 
 
 
-##### Installation
 
-1. Clone this repository
+
+### Installation
+
+1\. Clone this repository
+
+
 
  	git clone <repository\_url>
 
  	cd <repository\_folder>
 
+
+
 2\. Create a virtual environment
+
+
 
  	python -m venv venv
 
- 	source venv/bin/activate   # Linux/Mac
+ 	source venv/bin/activate  	# Linux/Mac
 
- 	venv\\Scripts\\activate      # Windows
+ 	venv\\Scripts\\activate      	# Windows
+
+
 
 3\. Install dependencies
 
  	pip install -r requirements.txt
 
+
+
 4\. Ensure the database and sample data are in the correct paths (see Project Structure)
+
+
 
 
 
@@ -177,13 +233,24 @@ Install dependencies using:
 
 Run the Streamlit app:
 
+
+
  	streamlit run ./app/app.py
+
+
 
 The system provides the following pages:
 
+
+
 * Scan FG SN: Scan FG SN and get an overview of scanned units and their status.
 * Manual Input Error: Allow operators to input errors for current running failed units
-* Charts: Data visualization by selecting order\_id, including error bar chart and top-5 pie chart
+* Troubleshooting Records: Allow engineer to update root cause, action taken and status by selecting Batch ID with SN.
+* Charts: Data visualization by selecting order\_id, including error bar chart, root cause bar chart and top-5 pie chart
+
+
+
+
 
 
 
@@ -191,14 +258,22 @@ The system provides the following pages:
 
 The system uses SQLite (DB/AgingAutomation.db) to store:
 
+
+
 * Scanned units and their details
 * Error codes and descriptions
+
+
+
+
 
 
 
 ##### Configuration
 
 Edit config.py to set:
+
+
 
 * MAX\_PER\_RACK
 * RACK\_PC
@@ -212,13 +287,17 @@ Edit config.py to set:
 
 
 
+
+
+
+
 ##### Screenshots
 
 Screenshots of the system are stored in the screenshot/ folder
 
+##### 
 
-
-
+##### 
 
 ##### Future Improvement
 
@@ -227,11 +306,15 @@ Screenshots of the system are stored in the screenshot/ folder
 
   * Error bar chart for errors by order\_id
   * Top-5 error pie chart
-* Record root cause for failed units
+  * Root cause bar chart for errors by order\_id
+  * Top-5 root cause pie chart
+* Record root cause for failed units - **UPDATED!**
 
 
 
-##### Author
+
+
+Author
 
 Foo Ke Ting
 

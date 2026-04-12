@@ -607,7 +607,7 @@ def end_batch():
 
 multiPage = st.sidebar.selectbox(
     "Select Page",
-    ["Scan FG SN","Manual Input Error Failed Unit", "Charts"]
+    ["Scan FG SN","Manual Input Error Failed Unit", "Troubleshooting Records", "Charts"]
 )
 conn = get_connection()
 cursor = conn.cursor()
@@ -664,7 +664,7 @@ if multiPage == "Scan FG SN":
                     st.session_state.confirm_cancel = False
 
     display_scan_summary(st.session_state.selected_rack)
-
+   
 elif multiPage == "Manual Input Error Failed Unit":
     st.title("Manual Input Error for Failed Unit")
 
@@ -749,6 +749,68 @@ elif multiPage == "Manual Input Error Failed Unit":
                     st.session_state.clear_manual_inputs = True
                     st.rerun()
 
+elif multiPage == "Troubleshooting Records":
+
+    st.title("Troubleshooting report")
+
+    df_failed = pd.read_sql_query("""SELECT * FROM troubleshooting_records WHERE troubleshooting_status = "Open" OR troubleshooting_status = "In Progress" ORDER BY batch_id DESC
+    """,conn)
+
+    if df_failed.empty:
+        st.info("No troubleshooting records found.")
+    else:
+        df_failed["display"] = df_failed["batch_id"].astype(str) + " - " + df_failed["fg_sn"]
+
+        selected_display = st.selectbox(
+            "Select Unit SN to Edit",
+            df_failed["display"]
+        )
+
+        selected_row = df_failed[df_failed["display"] == selected_display].iloc[0]
+        selected_id = selected_row["batch_id"]
+
+    st.divider()
+    st.subheader("Edit troubleshooting details")
+
+    action_finding = st.text_area(
+        "Finding / Action Taken",
+        value=selected_row["action_finding"] if selected_row["action_finding"] else ""
+    )
+
+    status = st.selectbox(
+            "Troubleshooting Status",
+            ["Open", "In Progress", "Closed"],
+            index=["Open", "In Progress", "Closed"].index(
+                selected_row["troubleshooting_status"]
+                if selected_row["troubleshooting_status"] in ["Open", "In Progress", "Closed"]
+                else "Open"
+            )
+        )
+
+    root_cause = st.text_area("Root Cause",value=selected_row["root_cause"]if selected_row["root_cause"]else"")
+
+    mergebatch_id = int(selected_row["batch_id"])
+    mergefg_sn = str(selected_row["fg_sn"])
+
+    if st.button("💾 Update Troubleshooting Record"):
+
+        cursor.execute("""
+            UPDATE troubleshooting_records
+            SET root_cause = ?,
+                troubleshooting_status = ?,
+                action_finding = ?
+            WHERE batch_id = ? AND fg_sn = ?
+        """, (root_cause, status, action_finding, mergebatch_id, mergefg_sn))
+
+        conn.commit()
+
+        st.success("Record updated successfully!")
+        time.sleep(2)
+        st.rerun()
+
+    df_troubleshooting = pd.read_sql_query("""SELECT * FROM troubleshooting_records""",conn)
+    st.dataframe(df_troubleshooting,width="stretch")
+
 elif multiPage == "Charts":
     st.title("📈 Batch Analysis Dashboard")
     st.divider()
@@ -766,3 +828,14 @@ elif multiPage == "Charts":
                 show_error_bar_chart(df)
             with tab3:
                 show_error_pie_chart(df)
+        with st.container():
+            st.subheader("📊 Error by Root Cause")
+            df = get_root_cause_data(selected_order)
+            tab1, tab2, tab3 = st.tabs(["📋 Table", "📊 Bar Chart", "🥧 Pie Chart"], default="📊 Bar Chart")
+            
+            with tab1:
+                show_root_cause_table(df)
+            with tab2:
+                show_root_cause_bar_chart(df)
+            with tab3:
+                show_root_cause_pie_chart(df)

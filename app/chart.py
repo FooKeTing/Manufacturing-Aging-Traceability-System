@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from db import init_db, get_connection
 
 def func(pct, allvalues):
@@ -34,25 +35,19 @@ def get_error_data(order_id):
         GROUP BY error_desc
         ORDER BY count DESC
     """
+
     df = pd.read_sql_query(query, conn, params=(order_id,))
     conn.close()
-
-    df['error_desc'] = df['error_desc'].fillna('Unknown Error')
-    df.loc[df['error_desc'].str.strip() == '', 'error_desc'] = 'Unknown Error'
 
     return df
 
 def show_error_table(df):
     if df.empty:
-        st.warning("No failed units found for this batch.")
+        st.warning("No failed units found for this order.")
         return
     st.dataframe(df)
 
 def show_error_bar_chart(df):
-    if df.empty:
-        st.warning("No failed units found for this batch.")
-        return 
-
     fig, ax = plt.subplots() 
     ax.bar(df['error_desc'], df['count'], color='skyblue')
     ax.set_xticks(range(len(df['error_desc'])))
@@ -62,13 +57,9 @@ def show_error_bar_chart(df):
     ax.set_title("S/N Count by Error")
     plt.tight_layout()
 
-    st.pyplot(fig, width="content")
+    st.pyplot(fig, width = "stretch")
 
 def show_error_pie_chart(df):
-    if df.empty:
-        st.warning("No failed units found for this batch.")
-        return 
-
     top5 = df.head(5)
     fig, ax = plt.subplots()
 
@@ -83,4 +74,61 @@ def show_error_pie_chart(df):
     # add legend with error descriptions
     ax.legend(wedges, top5['error_desc'], title="Categorized Error", bbox_to_anchor=(1, 0.5), loc="center left")
     ax.set_title("Top 5 S/N Count by Error")
+
+    st.pyplot(fig, width="content")
+
+def get_root_cause_data(order_id):
+    conn = get_connection()
+
+    query = """
+        SELECT 
+            COALESCE(root_cause, 'Under Investigation') AS root_cause,
+            COUNT(*) as count
+        FROM troubleshooting_records
+        WHERE order_id = ?
+        AND troubleshooting_status IN ('Open', 'In Progress', 'Closed')
+        AND reject_num = 1
+        GROUP BY root_cause
+        ORDER BY count DESC
+    """
+
+    df = pd.read_sql_query(query, conn, params=(order_id,))
+    conn.close()
+
+    return df
+
+def show_root_cause_table(df):
+    if df.empty:
+        st.warning(f"No root cause data found this order.")
+        return
+    st.dataframe(df)
+
+def show_root_cause_bar_chart(df):
+    fig, ax = plt.subplots() 
+    ax.bar(df['root_cause'], df['count'], color='skyblue')
+    ax.set_xticks(range(len(df['root_cause'])))
+    ax.set_xticklabels(df['root_cause'], rotation=45, ha='right')
+    ax.set_xlabel("Root Cause")
+    ax.set_ylabel("Number of Errors")
+    ax.set_title("Error Count by Root Cause")
+    plt.tight_layout()
+
+    st.pyplot(fig, width = "stretch")
+
+def show_root_cause_pie_chart(df):
+    top5 = df.head(5)
+    fig, ax = plt.subplots()
+
+    wedges, texts, autotexts = plt.pie(
+        top5['count'], 
+        labels=None,  
+        autopct=lambda pct: func(pct, top5['count']),
+        startangle=140,
+        colors=plt.cm.Pastel1.colors
+    )
+
+    # add legend with error descriptions
+    ax.legend(wedges, top5['root_cause'], title="Root Cause", bbox_to_anchor=(1, 0.5), loc="center left")
+    ax.set_title("Top 5 Root Causes")
+
     st.pyplot(fig, width="content")

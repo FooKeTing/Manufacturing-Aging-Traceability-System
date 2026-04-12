@@ -11,11 +11,10 @@ RACK_PC = {
     "R2":1,
     "R3":2,
     "R4":3,
-    "R5":4,
+    "R5":3,
     "R6":4,
 }
 RACK_LIST = list(RACK_PC.keys())
-
 
 # set parent folder that store traceability database
 BASE_PATH_TRACE = r"./DB/" 
@@ -26,10 +25,10 @@ SHARED_PATH = r"./sample_data/"
 # set specify folder path for database
 DB_PATH = r"./DB/" 
 
-# set file name that store traceability data
+# file name that store traceability data
 TRACE_DB_NAME = "Tracking Database.xlsx"
 
-# set database name that store data
+# database name that store data
 DB_NAME = "AgingAutomation.db"
 
 # dictionary mapping miner error codes to descriptions 
