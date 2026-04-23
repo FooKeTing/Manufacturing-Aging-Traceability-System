@@ -4,7 +4,8 @@ import pandas as pd
 import sqlite3
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
-from db import init_db, get_connection
+
+from database import init_db, get_connection
 
 def func(pct, allvalues):
     absolute = int(pct / 100.*np.sum(allvalues))
@@ -20,6 +21,56 @@ def select_order():
         st.warning("No orders found in the database.")
         return None
     return st.selectbox("Select Order ID", order_ids)
+
+def get_yield_data(order_id):
+    conn = get_connection()
+
+    query_yield = """
+        SELECT 
+            batch_id,
+            COUNT(*) as total,
+            SUM(CASE WHEN aging_result = 'Failed' THEN 1 ELSE 0 END) as failed
+        FROM unit_records
+        WHERE order_id = ?
+        AND fg_status = "Fresh"
+        GROUP BY batch_id
+        ORDER BY batch_id
+    """
+
+    df_yield = pd.read_sql_query(query_yield, conn, params=(order_id,))
+    conn.close()
+
+    df_yield["yield_loss"] = (df_yield["failed"] / df_yield["total"]) * 100
+
+    return df_yield
+
+def show_yield_table(df_yield):
+    if df_yield.empty:
+        st.warning("No data available for yield loss chart.")
+        return
+    st.dataframe(df_yield)
+
+def show_yield_loss_chart(df_yield):
+    fig, ax = plt.subplots()
+
+    ax.plot(df_yield["batch_id"], df_yield["yield_loss"], marker='o')
+
+    for i in range(len(df_yield)):
+        ax.text(
+            df_yield["batch_id"][i],
+            df_yield["yield_loss"][i],
+            f"{df_yield['yield_loss'][i]:.1f}%",
+            ha='center',
+            va='bottom'
+        )
+    
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    
+    ax.set_title("Yield Loss (%) by Batch")
+    ax.set_xlabel("Batch Number")
+    ax.set_ylabel("Yield Loss (%)")
+
+    st.pyplot(fig)
 
 def get_error_data(order_id):
     conn = get_connection()
@@ -71,7 +122,6 @@ def show_error_pie_chart(df):
         colors=plt.cm.Pastel1.colors
     )
 
-    # add legend with error descriptions
     ax.legend(wedges, top5['error_desc'], title="Categorized Error", bbox_to_anchor=(1, 0.5), loc="center left")
     ax.set_title("Top 5 S/N Count by Error")
 
@@ -127,7 +177,6 @@ def show_root_cause_pie_chart(df):
         colors=plt.cm.Pastel1.colors
     )
 
-    # add legend with error descriptions
     ax.legend(wedges, top5['root_cause'], title="Root Cause", bbox_to_anchor=(1, 0.5), loc="center left")
     ax.set_title("Top 5 Root Causes")
 
