@@ -74,7 +74,7 @@ This project is a streamlit-based system designed to automate the processing and
 
 &nbsp; - **Yield Loss Line Chart (Added!)**
 
-	- Shows the yield loss of each batch for a selected "order\_id".
+&nbsp;	- Shows the yield loss of each batch for a selected "order\_id".
 
 &nbsp;	- Provides engineers with a clear view of yield loss per batch.
 
@@ -243,7 +243,7 @@ aging-traceability/
 
 **Install dependencies using:**
 
-&nbsp; pip install -r requirements.txt
+  pip install -r requirements.txt
 
 
 
@@ -255,9 +255,9 @@ aging-traceability/
 
 
 
-&nbsp; git clone <repository\_url>
+  git clone <repository\_url>
 
-&nbsp; cd <repository\_folder>
+  cd <repository\_folder>
 
 
 
@@ -265,11 +265,11 @@ aging-traceability/
 
 
 
-&nbsp; python -m venv venv
+  python -m venv venv
 
-&nbsp; source venv/bin/activate 	# Linux/Mac
+  source venv/bin/activate 	# Linux/Mac
 
-&nbsp; venv\\Scripts\\activate 	# Windows
+  venv\\Scripts\\activate 	# Windows
 
 
 
@@ -277,7 +277,7 @@ aging-traceability/
 
 
 
-&nbsp; pip install -r requirements.txt
+  pip install -r requirements.txt
 
 
 
@@ -299,7 +299,7 @@ Run the Streamlit app:
 
 
 
-&nbsp; streamlit run ./app/main.py
+   streamlit run ./app/main.py
 
 
 
